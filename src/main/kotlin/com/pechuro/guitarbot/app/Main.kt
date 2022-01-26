@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 private const val UPDATE_MESSAGES_DELAY_MS = 1 * 24 * 60 * 60 * 1000L
 
 suspend fun main() = withContext(Dispatchers.IO) {
+    println("AAAAAAA")
     val dataRepository = GoogleDriveRepository()
     val messageHolder = MessageHolder(repository = dataRepository).apply {
         loadMessages()
