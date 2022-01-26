@@ -1,14 +1,15 @@
 package com.pechuro.guitarbot.data
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
-import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.ServiceAccountCredentials
 import com.pechuro.guitarbot.app.Configuration
 import com.pechuro.guitarbot.domain.RemoteData
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
 class GoogleDriveRepository : DataRepository {
@@ -25,14 +26,17 @@ class GoogleDriveRepository : DataRepository {
     private val jsonFactory = GsonFactory.getDefaultInstance()
 
     private val driveService by lazy(LazyThreadSafetyMode.NONE) {
-        val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
-        Drive.Builder(httpTransport, jsonFactory, getCredentials(httpTransport))
-            .setApplicationName(Configuration.App.applicationName)
+        Drive.Builder(
+            GoogleNetHttpTransport.newTrustedTransport(),
+            jsonFactory,
+            HttpCredentialsAdapter(getCredentials())
+        )
+            .setApplicationName(Configuration.App.APPLICATION_NAME)
             .build()
     }
 
     private val parentDir by lazy(LazyThreadSafetyMode.NONE) {
-        queryFiles("name = '${Configuration.Google.googleRootFilePath}'").first()
+        queryFiles("name = '${Configuration.Google.ROOT_FILE_PATH}'").first()
     }
 
     override fun getBySourceId(id: String): List<RemoteData> {
@@ -89,13 +93,7 @@ class GoogleDriveRepository : DataRepository {
         }
     }.getOrDefault("")
 
-    private fun getCredentials(httpTransport: NetHttpTransport) = GoogleCredential.Builder()
-        .setTransport(httpTransport)
-        .setJsonFactory(jsonFactory)
-        .setServiceAccountId(Configuration.Google.googleServiceAccountEmail)
-        .setServiceAccountScopes(SCOPES)
-        .setServiceAccountPrivateKeyFromP12File(
-            GoogleDriveRepository::class.java.getResourceAsStream(Configuration.Google.googleCredentialsFilePath)
-        )
-        .build()
+    private fun getCredentials() = ServiceAccountCredentials.fromStream(
+        ByteArrayInputStream(Configuration.Google.API_KEY.toByteArray())
+    ).createScoped(SCOPES)
 }

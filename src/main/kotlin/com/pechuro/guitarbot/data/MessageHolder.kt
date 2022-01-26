@@ -92,7 +92,7 @@ class MessageHolder(private val repository: DataRepository) {
 
     private fun List<RemoteData>.addFiles(parentNode: BotMessage.Content) = this
         .filterIsInstance<RemoteData.File>()
-        .chunked(Configuration.App.maxFilesPerPage)
+        .chunked(Configuration.App.MAX_FILES_PER_PAGE)
         .map { it.mapToText(base = parentNode.text) }
         .flatMap { it.chunked(MAX_TEXT_LENGTH - parentNode.text.length) }
         .createNodes(parentNode)

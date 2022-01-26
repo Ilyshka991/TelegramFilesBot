@@ -24,9 +24,9 @@ private val Long.chatId: ChatId
 class TelegramBot(private val messageHolder: MessageHolder) {
 
     val botInstance = bot {
-        token = Configuration.Telegram.token
-        timeout = Configuration.Telegram.timeoutSec
-        logLevel = Configuration.Telegram.logLevel
+        token = Configuration.Telegram.TOKEN
+        timeout = Configuration.Telegram.TIMEOUT_SEC
+        logLevel = Configuration.Telegram.LOG_LEVEL
         dispatch {
             setupStartCommand()
             setupMainActionListener()

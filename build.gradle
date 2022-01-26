@@ -1,13 +1,23 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.5.31'
     id 'java'
+    id 'de.fuerstenau.buildconfig' version '1.1.8'
 }
 
 group 'com.pechuro'
 version '1.0'
 
-task stage(dependsOn: ['build', 'clean'])
-build.mustRunAfter clean
+configurations {
+    create("compile")
+}
+
+buildConfig {
+    def localProps = getProperties('apikeys.properties')
+    buildConfigField 'String', 'APP_NAME', System.getenv('application.name') ?: localProps['application.name']
+    buildConfigField 'String', 'GOOGLE_API_KEY_JSON', System.getenv('google.api_key_json') ?: localProps['google.api_key_json']
+    buildConfigField 'String', 'GOOGLE_ROOT_FILE_PATH', System.getenv('google.root_file_path') ?: localProps['google.root_file_path']
+    buildConfigField 'String', 'TELEGRAM_BOT_TOKEN', System.getenv('telegram.bot_token') ?: localProps['telegram.bot_token']
+}
 
 repositories {
     mavenCentral()
@@ -24,4 +34,19 @@ dependencies {
     implementation 'com.google.oauth-client:google-oauth-client-jetty:1.32.1'
     implementation 'com.google.apis:google-api-services-drive:v3-rev20211107-1.32.1'
     implementation 'com.google.auth:google-auth-library-oauth2-http:1.3.0'
+}
+
+task stage(dependsOn: ['build', 'clean'])
+build.mustRunAfter clean
+
+def static getProperties(String path) {
+    def env = [:]
+    def file = new File(path)
+    if (file.exists()) {
+        file.eachLine { line ->
+            def (name, value) = line.split('=', 2)
+            env[name.trim()] = value.trim()
+        }
+    }
+    return env
 }

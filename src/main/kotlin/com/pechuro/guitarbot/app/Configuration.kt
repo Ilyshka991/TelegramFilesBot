@@ -1,28 +1,23 @@
 package com.pechuro.guitarbot.app
 
 import com.github.kotlintelegrambot.logging.LogLevel
-import java.util.*
+import com.pechuro.BuildConfig
 
 object Configuration {
 
-    private val props = Properties().apply {
-        load(Thread.currentThread().contextClassLoader.getResourceAsStream("apikeys.properties"))
-    }
-
     object App {
-        val applicationName: String = props.getProperty("application.name")
-        const val maxFilesPerPage = 6
+        const val APPLICATION_NAME: String = BuildConfig.APP_NAME
+        const val MAX_FILES_PER_PAGE = 6
     }
 
     object Google {
-        val googleServiceAccountEmail: String = props.getProperty("google.service_account_email")
-        val googleCredentialsFilePath: String = props.getProperty("google.credentials_file")
-        val googleRootFilePath: String = props.getProperty("google.root_file_path")
+        const val API_KEY: String = BuildConfig.GOOGLE_API_KEY_JSON
+        const val ROOT_FILE_PATH: String = BuildConfig.GOOGLE_ROOT_FILE_PATH
     }
 
     object Telegram {
-        val token: String = props.getProperty("telegram.bot_token")
-        const val timeoutSec = 30
-        val logLevel = LogLevel.Network.Body
+        const val TOKEN: String = BuildConfig.TELEGRAM_BOT_TOKEN
+        const val TIMEOUT_SEC = 30
+        val LOG_LEVEL = LogLevel.Network.Body
     }
 }
