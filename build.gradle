@@ -10,6 +10,18 @@ configurations {
     create("compile")
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.pechuro.guitarbot.app.MainKt'
+        )
+    }
+    from {
+        duplicatesStrategy "exclude"
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 buildConfig {
     def localProps = getProperties('apikeys.properties')
     buildConfigField 'String', 'APP_NAME', System.getenv('application.name') ?: localProps['application.name']
