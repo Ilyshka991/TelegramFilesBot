@@ -11,7 +11,7 @@ object Configuration {
     }
 
     object Google {
-        val API_KEY: String = System.getenv("google.api_key_json") ?: BuildConfig.GOOGLE_API_KEY_JSON
+        val API_KEY: String = (System.getenv("google.api_key_json") ?: BuildConfig.GOOGLE_API_KEY_JSON).also { println("AAAA $it") }
         val ROOT_FILE_PATH: String = System.getenv("google.root_file_path") ?: BuildConfig.GOOGLE_ROOT_FILE_PATH
     }
 
