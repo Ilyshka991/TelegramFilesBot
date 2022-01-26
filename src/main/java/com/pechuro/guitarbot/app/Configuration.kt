@@ -11,7 +11,9 @@ object Configuration {
     }
 
     object Google {
-        const val API_KEY: String = BuildConfig.GOOGLE_API_KEY_JSON
+         val API_KEY: String = BuildConfig.GOOGLE_API_KEY_JSON.also {
+            println("AAAAA $it")
+        }
         const val ROOT_FILE_PATH: String = BuildConfig.GOOGLE_ROOT_FILE_PATH
     }
 
