@@ -1,7 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.5.31'
     id 'java'
-    id 'de.fuerstenau.buildconfig' version '1.1.8'
 }
 
 group 'com.pechuro'
@@ -20,14 +19,6 @@ jar {
         duplicatesStrategy "exclude"
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-}
-
-buildConfig {
-    def localProps = getProperties('apikeys.properties')
-    buildConfigField 'String', 'APP_NAME', System.getProperty('application.name') ?: localProps['application.name']
-    buildConfigField 'String', 'GOOGLE_API_KEY_JSON', System.getProperty('google.api_key_json') ?: localProps['google.api_key_json']
-    buildConfigField 'String', 'GOOGLE_ROOT_FILE_PATH', System.getProperty('google.root_file_path') ?: localProps['google.root_file_path']
-    buildConfigField 'String', 'TELEGRAM_BOT_TOKEN', System.getProperty('telegram.bot_token') ?: localProps['telegram.bot_token']
 }
 
 repositories {
@@ -49,15 +40,3 @@ dependencies {
 
 task stage(dependsOn: ['build', 'clean'])
 build.mustRunAfter clean
-
-def static getProperties(String path) {
-    def env = [:]
-    def file = new File(path)
-    if (file.exists()) {
-        file.eachLine { line ->
-            def (name, value) = line.split('=', 2)
-            env[name.trim()] = value.trim()
-        }
-    }
-    return env
-}
