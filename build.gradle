@@ -6,6 +6,9 @@ plugins {
 group 'com.pechuro'
 version '1.0'
 
+task stage(dependsOn: ['build', 'clean'])
+build.mustRunAfter clean
+
 repositories {
     mavenCentral()
     maven { url "https://jitpack.io" }
