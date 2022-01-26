@@ -2,7 +2,7 @@ package com.pechuro.guitarbot.app
 
 import com.pechuro.guitarbot.TelegramBot
 import com.pechuro.guitarbot.data.GoogleDriveRepository
-import com.pechuro.guitarbot.domain.MessageHolder
+import com.pechuro.guitarbot.data.MessageHolder
 import kotlinx.coroutines.*
 
 private const val UPDATE_MESSAGES_DELAY_MS = 1 * 24 * 60 * 60 * 1000L

@@ -1,7 +1,9 @@
-package com.pechuro.guitarbot.domain
+package com.pechuro.guitarbot.data
 
 import com.pechuro.guitarbot.app.Configuration
-import com.pechuro.guitarbot.data.DataRepository
+import com.pechuro.guitarbot.domain.BotMessage
+import com.pechuro.guitarbot.domain.BotMessageType
+import com.pechuro.guitarbot.domain.RemoteData
 import com.pechuro.guitarbot.ext.getStringFromResources
 import com.pechuro.guitarbot.ext.plusNotNull
 import java.util.concurrent.atomic.AtomicLong
@@ -41,12 +43,12 @@ class MessageHolder(private val repository: DataRepository) {
         return parentNode
     }
 
-    fun findMessage(messageInfo: MessageInfo): BotMessage? {
-        val rootNode = when (messageInfo) {
-            is MessageInfo.Normal -> rootMessage
-            is MessageInfo.Search -> searchCache[messageInfo.chatId]
+    fun findMessage(messageType: BotMessageType): BotMessage? {
+        val rootNode = when (messageType) {
+            is BotMessageType.Normal -> rootMessage
+            is BotMessageType.Search -> searchCache[messageType.chatId]
         } ?: return null
-        return findMessageByIdInternal(messageInfo.id, rootNode)
+        return findMessageByIdInternal(messageType.id, rootNode)
     }
 
     fun loadMessages(id: String = "", node: BotMessage.Content = rootMessage) {
@@ -85,13 +87,17 @@ class MessageHolder(private val repository: DataRepository) {
         .flatMap { it.text.chunked(MAX_TEXT_LENGTH - parentNode.text.length) }
         .map { "${parentNode.text}\n\n$it" }
         .createNodes(parentNode)
+        .connectNodes()
+        .lastOrNull() ?: parentNode
 
     private fun List<RemoteData>.addFiles(parentNode: BotMessage.Content) = this
         .filterIsInstance<RemoteData.File>()
         .chunked(Configuration.App.maxFilesPerPage)
-        .map { files -> getTextForFiles(base = parentNode.text, files = files) }
+        .map { it.mapToText(base = parentNode.text) }
         .flatMap { it.chunked(MAX_TEXT_LENGTH - parentNode.text.length) }
         .createNodes(parentNode)
+        .connectNodes()
+        .lastOrNull() ?: parentNode
 
     private fun List<String>.createNodes(parentNode: BotMessage.Content) = foldIndexed(
         mutableListOf<BotMessage.Content>()
@@ -114,13 +120,12 @@ class MessageHolder(private val repository: DataRepository) {
             nodes.add(nextNode)
         }
         nodes
-    }.let { nodes ->
-        for (i in nodes.indices) {
-            nodes[i].nodes = listOfNotNull(nodes.getOrNull(i + 1))
-                .plus(nodes[i].nodes)
-                .sorted()
+    }
+
+    private fun List<BotMessage.Content>.connectNodes() = apply {
+        for (i in indices) {
+            this[i].nodes = listOfNotNull(getOrNull(i + 1)).plus(this[i].nodes).sorted()
         }
-        nodes.lastOrNull() ?: parentNode
     }
 
     private fun List<BotMessage>.sorted() = sortedBy {
@@ -132,16 +137,15 @@ class MessageHolder(private val repository: DataRepository) {
         }
     }
 
-    private fun getTextForFiles(base: String, files: List<RemoteData.File>) = buildString {
+    private fun List<RemoteData.File>.mapToText(base: String) = buildString {
         append(base)
-        if (files.isNotEmpty()) {
-            append("\n\n${files.getFormattedFiles()}")
+        if (isNotEmpty()) {
+            val files = joinToString(separator = "") { it.formatFileName() }
+            append("\n\n${files}")
         }
     }
 
-    private fun List<RemoteData.File>.getFormattedFiles(): String {
-        return joinToString(separator = "") { "• [${it.name.escaped}](${it.url})\n" }
-    }
+    private fun RemoteData.File.formatFileName() = "• [${name.escaped}](${url})\n"
 
     private fun createBackMessage(parent: BotMessage) = BotMessage.Back(parent = parent)
 }

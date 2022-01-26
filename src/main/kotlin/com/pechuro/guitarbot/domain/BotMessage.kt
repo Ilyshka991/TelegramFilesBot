@@ -8,7 +8,6 @@ sealed class BotMessage {
     abstract val parent: BotMessage?
     abstract val label: String
 
-
     data class Content(
         override val id: Long,
         override val parent: BotMessage?,

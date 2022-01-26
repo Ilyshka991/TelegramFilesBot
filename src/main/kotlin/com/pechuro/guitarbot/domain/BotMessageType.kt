@@ -1,6 +1,6 @@
 package com.pechuro.guitarbot.domain
 
-sealed class MessageInfo {
+sealed class BotMessageType {
 
     companion object {
 
@@ -8,7 +8,7 @@ sealed class MessageInfo {
         private const val SEARCH_TYPE_ID = 2
         private const val DELIMITER = '_'
 
-        fun deserialize(value: String): MessageInfo? {
+        fun deserialize(value: String): BotMessageType? {
             val parts = value.split(DELIMITER)
             return when (parts.first().toInt()) {
                 NORMAL_TYPE_ID -> Normal(parts.last().toLong())
@@ -25,22 +25,22 @@ sealed class MessageInfo {
 
     data class Normal(
         override val id: Long
-    ) : MessageInfo()
+    ) : BotMessageType()
 
     data class Search(
         override val id: Long,
         val chatId: Long
-    ) : MessageInfo()
+    ) : BotMessageType()
 
     fun serialize() = buildString {
-        val typeId = when (this@MessageInfo) {
+        val typeId = when (this@BotMessageType) {
             is Normal -> NORMAL_TYPE_ID
             is Search -> SEARCH_TYPE_ID
         }
         append(typeId)
         append(DELIMITER)
         append(id)
-        if (this@MessageInfo is Search) {
+        if (this@BotMessageType is Search) {
             append(DELIMITER)
             append(chatId)
         }

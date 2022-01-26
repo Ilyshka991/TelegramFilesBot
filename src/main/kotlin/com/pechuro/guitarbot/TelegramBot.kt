@@ -12,9 +12,9 @@ import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import com.github.kotlintelegrambot.entities.keyboard.KeyboardButton
 import com.github.kotlintelegrambot.extensions.filters.Filter
 import com.pechuro.guitarbot.app.Configuration
+import com.pechuro.guitarbot.data.MessageHolder
 import com.pechuro.guitarbot.domain.BotMessage
-import com.pechuro.guitarbot.domain.MessageHolder
-import com.pechuro.guitarbot.domain.MessageInfo
+import com.pechuro.guitarbot.domain.BotMessageType
 import com.pechuro.guitarbot.ext.getStringFromResources
 import kotlin.reflect.KClass
 
@@ -71,8 +71,8 @@ class TelegramBot(private val messageHolder: MessageHolder) {
 
     private fun Dispatcher.setupCallback() = callbackQuery {
         val message = this.callbackQuery.message ?: return@callbackQuery
-        val messageInfo = MessageInfo.deserialize(callbackQuery.data) ?: return@callbackQuery
-        val botMsg = messageHolder.findMessage(messageInfo) as? BotMessage.Content ?: return@callbackQuery
+        val messageType = BotMessageType.deserialize(callbackQuery.data) ?: return@callbackQuery
+        val botMsg = messageHolder.findMessage(messageType) as? BotMessage.Content ?: return@callbackQuery
         bot.editMessageText(
             chatId = message.chat.id.chatId,
             messageId = message.messageId,
@@ -81,7 +81,7 @@ class TelegramBot(private val messageHolder: MessageHolder) {
             disableWebPagePreview = false,
             replyMarkup = botMsg.mapToReplyMarkup(
                 chatIdHandle = message.chat.id,
-                messageClazz = messageInfo::class
+                messageClazz = messageType::class
             )
         )
     }
@@ -95,7 +95,7 @@ class TelegramBot(private val messageHolder: MessageHolder) {
             disableWebPagePreview = false,
             replyMarkup = messageHolder.rootMessage.mapToReplyMarkup(
                 chatIdHandle = (chatId as? ChatId.Id)?.id ?: 0,
-                messageClazz = MessageInfo.Normal::class
+                messageClazz = BotMessageType.Normal::class
             )
         )
     }
@@ -131,28 +131,28 @@ class TelegramBot(private val messageHolder: MessageHolder) {
             disableWebPagePreview = false,
             replyMarkup = msg.mapToReplyMarkup(
                 chatIdHandle = (chatId as? ChatId.Id)?.id ?: 0,
-                messageClazz = MessageInfo.Search::class
+                messageClazz = BotMessageType.Search::class
             )
         )
     }
 
     private fun BotMessage.Content.mapToReplyMarkup(
         chatIdHandle: Long,
-        messageClazz: KClass<out MessageInfo>
+        messageClazz: KClass<out BotMessageType>
     ): ReplyMarkup {
         val buttons = nodes.mapNotNull {
             val (text, nextMsgId) = when (it) {
                 is BotMessage.Content -> it.label to it.id
                 is BotMessage.Back -> it.label to (it.parent?.id ?: 0)
             }
-            val messageInfo = when (messageClazz) {
-                MessageInfo.Search::class -> MessageInfo.Search(nextMsgId, chatIdHandle)
-                MessageInfo.Normal::class -> MessageInfo.Normal(nextMsgId)
+            val messageType = when (messageClazz) {
+                BotMessageType.Search::class -> BotMessageType.Search(nextMsgId, chatIdHandle)
+                BotMessageType.Normal::class -> BotMessageType.Normal(nextMsgId)
                 else -> return@mapNotNull null
             }
             InlineKeyboardButton.CallbackData(
                 text = text,
-                callbackData = messageInfo.serialize(),
+                callbackData = messageType.serialize(),
             )
         }
         return InlineKeyboardMarkup.createSingleRowKeyboard(buttons)
