@@ -24,10 +24,12 @@ jar {
 
 buildConfig {
     def localProps = getProperties('apikeys.properties')
-    buildConfigField 'String', 'APP_NAME', System.getenv('application.name') ?: localProps['application.name']
-    buildConfigField 'String', 'GOOGLE_API_KEY_JSON', System.getenv('google.api_key_json') ?: localProps['google.api_key_json']
-    buildConfigField 'String', 'GOOGLE_ROOT_FILE_PATH', System.getenv('google.root_file_path') ?: localProps['google.root_file_path']
-    buildConfigField 'String', 'TELEGRAM_BOT_TOKEN', System.getenv('telegram.bot_token') ?: localProps['telegram.bot_token']
+    println System.getenv('google.api_key_json')
+    println System.getProperty('google.api_key_json')
+    buildConfigField 'String', 'APP_NAME', System.getProperty('application.name') ?: localProps['application.name']
+    buildConfigField 'String', 'GOOGLE_API_KEY_JSON', System.getProperty('google.api_key_json') ?: localProps['google.api_key_json']
+    buildConfigField 'String', 'GOOGLE_ROOT_FILE_PATH', System.getProperty('google.root_file_path') ?: localProps['google.root_file_path']
+    buildConfigField 'String', 'TELEGRAM_BOT_TOKEN', System.getProperty('telegram.bot_token') ?: localProps['telegram.bot_token']
 }
 
 repositories {
