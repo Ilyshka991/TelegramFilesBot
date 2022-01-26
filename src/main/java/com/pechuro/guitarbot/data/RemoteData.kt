@@ -1,4 +1,4 @@
-package com.pechuro.guitarbot.domain
+package com.pechuro.guitarbot.data
 
 sealed class RemoteData {
 

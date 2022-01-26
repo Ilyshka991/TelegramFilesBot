@@ -1,9 +1,11 @@
-package com.pechuro.guitarbot.data
+package com.pechuro.guitarbot.data.impl
 
 import com.pechuro.guitarbot.app.Configuration
+import com.pechuro.guitarbot.data.DataRepository
+import com.pechuro.guitarbot.data.RemoteData
 import com.pechuro.guitarbot.domain.BotMessage
-import com.pechuro.guitarbot.domain.BotMessageType
-import com.pechuro.guitarbot.domain.RemoteData
+import com.pechuro.guitarbot.domain.BotMessageProvider
+import com.pechuro.guitarbot.domain.BotMessageInfo
 import com.pechuro.guitarbot.ext.getStringFromResources
 import com.pechuro.guitarbot.ext.plusNotNull
 import java.util.concurrent.atomic.AtomicLong
@@ -16,9 +18,9 @@ val String.escaped: String
 
 private const val MAX_TEXT_LENGTH = 4096
 
-class MessageHolder(private val repository: DataRepository) {
+class DefaultMessageProvider(private val repository: DataRepository) : BotMessageProvider {
 
-    val rootMessage: BotMessage.Content = BotMessage.Content(
+    override val rootMessage: BotMessage.Content = BotMessage.Content(
         id = idGenerator.getAndIncrement(),
         label = "",
         text = getStringFromResources("message.main").escaped,
@@ -28,7 +30,11 @@ class MessageHolder(private val repository: DataRepository) {
 
     private val searchCache = mutableMapOf<Long, BotMessage>()
 
-    fun startSearch(predicate: String, chatId: Long): BotMessage.Content {
+    init {
+        sync()
+    }
+
+    override fun search(chatId: Long, predicate: String): BotMessage.Content {
         val files = repository.findFiles(predicate)
         val textResId = if (files.isEmpty()) "message.notFound" else "message.found"
         val parentNode = BotMessage.Content(
@@ -43,15 +49,22 @@ class MessageHolder(private val repository: DataRepository) {
         return parentNode
     }
 
-    fun findMessage(messageType: BotMessageType): BotMessage? {
-        val rootNode = when (messageType) {
-            is BotMessageType.Normal -> rootMessage
-            is BotMessageType.Search -> searchCache[messageType.chatId]
+    override fun get(messageInfo: BotMessageInfo): BotMessage.Content? {
+        val rootNode = when (messageInfo) {
+            is BotMessageInfo.Normal -> rootMessage
+            is BotMessageInfo.Search -> searchCache[messageInfo.chatId]
         } ?: return null
-        return findMessageByIdInternal(messageType.id, rootNode)
+        return findMessageByIdInternal(messageInfo.id, rootNode)
     }
 
-    fun loadMessages(id: String = "", node: BotMessage.Content = rootMessage) {
+    override fun sync() {
+        loadRemoteMessages(
+            id = "",
+            node = rootMessage
+        )
+    }
+
+    private fun loadRemoteMessages(id: String, node: BotMessage.Content) {
         val remoteDataList = repository.getBySourceId(id)
         node.nodes = remoteDataList
             .filterIsInstance<RemoteData.Folder>()
@@ -63,7 +76,7 @@ class MessageHolder(private val repository: DataRepository) {
                     parent = node,
                     nodes = emptyList()
                 ).also { root ->
-                    loadMessages(data.id, root)
+                    loadRemoteMessages(data.id, root)
                 }
             }
             .plusNotNull(node.parent?.let { createBackMessage(it) })
@@ -71,14 +84,15 @@ class MessageHolder(private val repository: DataRepository) {
         remoteDataList.addFiles(lastNode)
     }
 
-    private fun findMessageByIdInternal(id: Long, node: BotMessage = rootMessage): BotMessage? {
-        if (node.id == id) return node
-        if (node is BotMessage.Content) {
+    private fun findMessageByIdInternal(id: Long, node: BotMessage = rootMessage): BotMessage.Content? = when {
+        node !is BotMessage.Content -> null
+        node.id == id -> node
+        else -> {
             node.nodes.forEach {
                 return findMessageByIdInternal(id, it) ?: return@forEach
             }
+            null
         }
-        return null
     }
 
     private fun List<RemoteData>.addText(parentNode: BotMessage.Content): BotMessage.Content = this
@@ -147,5 +161,5 @@ class MessageHolder(private val repository: DataRepository) {
 
     private fun RemoteData.File.formatFileName() = "• [${name.escaped}](${url})\n"
 
-    private fun createBackMessage(parent: BotMessage) = BotMessage.Back(parent = parent)
+    private fun createBackMessage(parent: BotMessage.Content) = BotMessage.Back(parent = parent)
 }
