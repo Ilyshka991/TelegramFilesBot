@@ -1,4 +1,4 @@
-package com.pechuro.guitarbot.data
+package com.pechuro.guitarbot.data.impl
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -8,17 +8,18 @@ import com.google.api.services.drive.model.File
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.ServiceAccountCredentials
 import com.pechuro.guitarbot.app.Configuration
-import com.pechuro.guitarbot.domain.RemoteData
+import com.pechuro.guitarbot.data.DataRepository
+import com.pechuro.guitarbot.data.RemoteData
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
 class GoogleDriveRepository : DataRepository {
 
     companion object {
-        private val SCOPES = listOf(DriveScopes.DRIVE_READONLY)
-
         private const val FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
         private const val QUERY_DEFAULT_FILTER = "name != '.DS_Store'"
+
+        private val SCOPES = listOf(DriveScopes.DRIVE_READONLY)
     }
 
     private val textContentRegex = """index(\d*)\.txt""".toRegex()
@@ -80,11 +81,7 @@ class GoogleDriveRepository : DataRepository {
         }
     }
 
-    private fun File.getDownloadLink() = if (mimeType != FOLDER_MIME_TYPE) {
-        "https://drive.google.com/uc?id=${id}&export=download"
-    } else {
-        ""
-    }
+    private fun File.getDownloadLink() = "https://drive.google.com/uc?id=${id}&export=download"
 
     private fun File.getFileContent() = runCatching {
         ByteArrayOutputStream().use { output ->

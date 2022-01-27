@@ -6,6 +6,7 @@ object Configuration {
 
     object App {
         val APPLICATION_NAME: String = System.getenv("application.name")
+        const val SYNC_MESSAGES_DELAY_MS = 1 * 24 * 60 * 60 * 1000L
         const val MAX_FILES_PER_PAGE = 6
     }
 
