@@ -1,7 +1,5 @@
 package com.pechuro.guitarbot.domain
 
-import com.pechuro.guitarbot.ext.getStringFromResources
-
 sealed class BotMessage {
 
     abstract val parent: Content?
@@ -17,6 +15,6 @@ sealed class BotMessage {
 
     data class Back(
         override val parent: Content?,
-        override val label: String = getStringFromResources("action.back")
+        override val label: String
     ) : BotMessage()
 }

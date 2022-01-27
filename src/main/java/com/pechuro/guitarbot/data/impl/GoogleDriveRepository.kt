@@ -18,11 +18,11 @@ class GoogleDriveRepository : DataRepository {
     companion object {
         private const val FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
         private const val QUERY_DEFAULT_FILTER = "name != '.DS_Store'"
+        private const val TEXT_FILE_NAME = "index.txt"
+        private const val TEXT_FILE_SEPARATOR = "\n\n---***---\n\n"
 
         private val SCOPES = listOf(DriveScopes.DRIVE_READONLY)
     }
-
-    private val textContentRegex = """index(\d*)\.txt""".toRegex()
 
     private val jsonFactory = GsonFactory.getDefaultInstance()
 
@@ -58,26 +58,29 @@ class GoogleDriveRepository : DataRepository {
         .execute()
         .files
 
-    private fun List<File>.mapToDomainEntity() = map {
-        if (it.mimeType == FOLDER_MIME_TYPE) {
-            RemoteData.Folder(
-                name = it.name,
-                id = it.id
-            )
-        } else {
-            val textMatchResult = textContentRegex.matchEntire(it.name)
-            if (textMatchResult != null) {
-                RemoteData.Text(
-                    page = textMatchResult.groupValues.getOrNull(1)?.toIntOrNull() ?: 0,
-                    text = it.getFileContent()
+    private fun List<File>.mapToDomainEntity() = flatMap {
+        when {
+            it.mimeType == FOLDER_MIME_TYPE -> listOf(
+                RemoteData.Folder(
+                    name = it.name,
+                    id = it.id
                 )
-            } else {
+            )
+            it.name == TEXT_FILE_NAME -> it.getFileContent()
+                .split(TEXT_FILE_SEPARATOR)
+                .mapIndexed { index, textPage ->
+                    RemoteData.Text(
+                        page = index,
+                        text = textPage
+                    )
+                }
+            else -> listOf(
                 RemoteData.File(
                     name = it.name,
                     mimeType = it.mimeType,
                     url = it.getDownloadLink()
                 )
-            }
+            )
         }
     }
 

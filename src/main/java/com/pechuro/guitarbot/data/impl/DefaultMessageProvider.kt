@@ -98,8 +98,10 @@ class DefaultMessageProvider(private val repository: DataRepository) : BotMessag
     private fun List<RemoteData>.addText(parentNode: BotMessage.Content): BotMessage.Content = this
         .filterIsInstance<RemoteData.Text>()
         .sortedBy { it.page }
-        .flatMap { it.text.chunked(MAX_TEXT_LENGTH - parentNode.text.length) }
-        .map { "${parentNode.text}\n\n$it" }
+        .flatMap { (_, text) ->
+            if (text.isEmpty()) listOf("") else text.chunked(MAX_TEXT_LENGTH - parentNode.text.length)
+        }
+        .map { if (it.isEmpty()) parentNode.text else "${parentNode.text}\n\n$it" }
         .createNodes(parentNode)
         .connectNodes()
         .lastOrNull() ?: parentNode
@@ -161,5 +163,8 @@ class DefaultMessageProvider(private val repository: DataRepository) : BotMessag
 
     private fun RemoteData.File.formatFileName() = "• [${name.escaped}](${url})\n"
 
-    private fun createBackMessage(parent: BotMessage.Content) = BotMessage.Back(parent = parent)
+    private fun createBackMessage(parent: BotMessage.Content) = BotMessage.Back(
+        parent = parent,
+        label = getStringFromResources("action.back")
+    )
 }
