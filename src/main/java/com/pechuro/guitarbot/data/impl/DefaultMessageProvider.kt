@@ -140,16 +140,7 @@ class DefaultMessageProvider(private val repository: DataRepository) : BotMessag
 
     private fun List<BotMessage.Content>.connectNodes() = apply {
         for (i in indices) {
-            this[i].nodes = listOfNotNull(getOrNull(i + 1)).plus(this[i].nodes).sorted()
-        }
-    }
-
-    private fun List<BotMessage>.sorted() = sortedBy {
-        when (it.label) {
-            getStringFromResources("action.previousPage") -> 1
-            getStringFromResources("action.nextPage") -> 2
-            getStringFromResources("action.back") -> 4
-            else -> 3
+            this[i].nodes = listOfNotNull(getOrNull(i + 1)).plus(this[i].nodes)
         }
     }
 

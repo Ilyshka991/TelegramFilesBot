@@ -169,7 +169,32 @@ class TelegramBot(private val messageProvider: BotMessageProvider) {
                 text = text,
                 callbackData = messageType.serialize(),
             )
+        }.splitToRows()
+        return InlineKeyboardMarkup.create(buttons)
+    }
+
+    private fun List<InlineKeyboardButton>.splitToRows(): List<List<InlineKeyboardButton>> {
+        val sortedNavigationButtons = sortNavigationButtons()
+        val navigationButtons = sortedNavigationButtons.getNavigationButtons()
+        return sortedNavigationButtons
+            .drop(navigationButtons.size)
+            .sortedBy { it.text }
+            .chunked(2)
+            .plus(listOf(navigationButtons))
+    }
+
+    private fun List<InlineKeyboardButton>.sortNavigationButtons() = sortedBy {
+        when (it.text) {
+            getStringFromResources("action.previousPage") -> 1
+            getStringFromResources("action.nextPage") -> 2
+            getStringFromResources("action.back") -> 3
+            else -> 4
         }
-        return InlineKeyboardMarkup.createSingleRowKeyboard(buttons)
+    }
+
+    private fun List<InlineKeyboardButton>.getNavigationButtons() = takeWhile {
+        it.text == getStringFromResources("action.previousPage") ||
+                it.text == getStringFromResources("action.nextPage") ||
+                it.text == getStringFromResources("action.back")
     }
 }
